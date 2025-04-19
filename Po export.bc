@@ -1,0 +1,792 @@
+|******************************************************************************
+|* txcomdll0001  B61O_a_ext
+|* Support Library for PO Export
+|* rbondugu
+|* 2023-11-29 [03:10]
+|******************************************************************************
+|* Script Type: Library
+|******************************************************************************
+	|* Includes
+	#include	<bic_dam>
+	#include	<bic_text>
+	
+	table	ttdpur400
+	table	ttdpur402
+			
+	long	tcmcs2000.e
+	
+	#define EOL		chr$(13) & chr$(10)
+	#define EOF		chr$(26)
+	#define RETIFNOK(...)
+^		tcmcs2000.e = ...
+^		if tcmcs2000.e <> 0 then
+^			return(tcmcs2000.e)
+^		endif
+	
+	
+
+|**************************** Extern Functions ********************************                                                                               
+function extern long txcom.dll0001.get.purchase.order.data(
+				domain	tcorno	i.po.number)
+{
+	domain	tcorno		l.po.number	
+	domain	tcpono		l.po.position,l.po.sequence		 
+	domain	tcitem		l.item
+	domain	tccom.bpid	l.buy.from.bp,l.ship.from.bp	 
+	domain	tcdate		l.ddta
+	domain	tccdec		l.cdec 
+	domain	tccom.cadr	l.cadr,l.sfad
+		  		
+	domain	tcorno 		l.sorn
+	domain	tcpono		l.spon
+	domain	tcpono		l.so.seq
+	
+	domain	tcmcs.st30m	l.customer.order	|*NEW
+	domain	tcaitm		l.customer.item		|*NEW
+	domain	tcqsl1		l.order.quantity
+	domain	tccitt		l.item.code.system
+	domain	tccom.bpid	l.ship.to.bp
+	domain	tcitem		l.so.item
+				
+	domain	txttyp		l.ttyp
+	domain	tccdf_lstflt	l.flut
+	domain	tfgld.year	l.quac
+	domain	txlngt		l.widt
+	domain	txlinr		l.linr
+	domain	tdgen.long5	l.blhe
+	domain	txcorr		l.corr
+	domain	txscot		l.scot
+	domain	tcmcs.str10	l.sccr
+	domain	tcyesno		l.cert
+	domain	txcett		l.cett
+	domain	tcmcs.str10	l.csty
+	domain	tcmcs.str256m	l.scvl
+	domain	tcyesno		l.dscr
+	domain	txprnt		l.prin
+	domain	tcmcs.st15m	l.pnam
+	domain	tcmcs.str10	l.inkc
+	domain	tcmcs.str1	l.corrugated.type
+				
+	domain	tiasc.cytm	l.lnth
+	domain	tcyesno		l.palt
+	domain	tdgen.long5	l.punt
+				
+	domain	tcnama		l.nama
+	domain	tcnamc		l.namc
+	domain	tcmcs.cste	l.cste
+	domain	tcccty		l.ccty
+	domain	tcpstc		l.pstc
+				
+	domain	tccdec		l.cscd
+	domain	tcmcs.str1	l.isCSCdelivery
+	domain	tcmcs.str1	l.separator
+		long		i
+	initialize.variables( l.po.number,	             
+	                      l.po.position,l.po.sequence,	
+	                      l.item,                       
+	                      l.buy.from.bp,l.ship.from.bp,	
+	                      l.ddta,                       
+	                      l.cdec,                       
+	                      l.cadr,l.sfad,                
+	                                                   
+	                      l.sorn,                       
+	                      l.spon, 
+	                      
+	                      l.customer.order,
+	                      l.order.quantity, 
+	                      
+	                      l.customer.item,                     
+	                      l.item.code.system,                            
+	                      l.ship.to.bp,
+	                      l.so.item,     
+	                      
+	                      l.ttyp,                       
+	                      l.flut,                       
+	                      l.quac,                      
+	                      l.widt,                      
+	                      l.linr,                      
+	                      l.blhe,                      
+	                      l.corr,                      
+	                      l.scot,                      
+	                      l.sccr,                      
+	                      l.cert,                      
+	                      l.cett,                      
+	                      l.csty,                      
+	                      l.scvl,                      
+	                      l.dscr,                      
+	                      l.prin,                      
+	                      l.pnam,                      
+	                      l.inkc, 
+	                      l.corrugated.type,                     
+	                                                   
+	                      l.lnth,                      
+	                      l.palt,                      
+	                      l.punt,                      
+	                                                   
+	                      l.nama,                      
+	                      l.namc,                      
+	                      l.cste,                      
+	                      l.ccty,                      
+	                      l.pstc,                      
+	                                                   
+	                      l.cscd,                      
+	                      l.isCSCdelivery,              
+	                      l.separator  )                
+	
+	i = 0				
+		select	tdpur401.pono:l.po.position,
+			tdpur401.sqnb:l.po.sequence,
+			tdpur401.item:l.item,
+			tdpur401.otbp:l.buy.from.bp,
+			tdpur401.sfbp:l.ship.from.bp,
+			tdpur401.ddta:l.ddta,
+			tdpur401.cdec:l.cdec,
+			tdpur401.cadr:l.cadr,
+			tdpur401.sfad:l.sfad
+		from	tdpur401
+		where	tdpur401.orno = {:i.po.number}
+		selectdo
+			select	tdpur402.sorn:l.sorn,
+				tdpur402.spon:l.spon,
+				tdpur402.sseq:l.so.seq
+			from	tdpur402
+			where	tdpur402._index1 = {:i.po.number,:l.po.position,
+							:l.po.sequence}		
+			selectdo
+				select	tdsls400.corn:l.customer.order
+				from	tdsls400
+				where	tdsls400._index1 ={:l.sorn}
+				as set with 1 rows
+				selectdo
+				endselect
+				
+				
+				get.customer.item(l.sorn,
+						  l.spon,
+						  l.so.seq,
+						  l.customer.item,  |*ref
+						  l.order.quantity) |*ref
+			endselect
+			
+			get.item.details(l.item,
+					 l.ttyp,	|*ref
+					 l.flut,        |*ref
+			                 l.quac,        |*ref
+			                 l.widt,        |*ref
+			                 l.linr,        |*ref
+			                 l.blhe,        |*ref
+			                 l.corr,        |*ref
+			                 l.scot,        |*ref
+			                 l.sccr,        |*ref
+			                 l.cert,        |*ref
+			                 l.cett,        |*ref
+			                 l.csty,        |*ref
+			                 l.scvl,        |*ref
+			                 l.dscr,        |*ref
+			                 l.prin,        |*ref
+					 l.pnam,        |*ref
+					 l.inkc,        |*ref
+					 l.corrugated.type) |*ref					 
+						
+			get.item.purchase.bp(l.item,			
+					     l.lnth,	|*ref
+					     l.palt,	|*ref
+					     l.punt )	|*ref
+						
+			get.addresses(	l.sfad,
+					l.nama,		|*ref
+				        l.namc,		|*ref
+			                l.cste,		|*ref
+			                l.ccty,		|*ref
+			                l.pstc )	|*ref
+			
+			select	txcom001.cscd:l.cscd
+			from	txcom001
+			as set with 1 rows
+			selectdo
+				if l.cscd = l.cdec then
+					l.isCSCdelivery = "Y"
+				else
+					l.isCSCdelivery = "N"
+				endif
+			endselect
+		endselect
+		|*Fetching Seperator
+		select	txcom001.sepa:l.separator
+        	from	txcom001
+        	where	txcom001.cscb = {:tdpur400.otbp}
+        	selectdo
+        	endselect
+		i = i+1					
+		create.csv.file(i,
+				l.po.number,            
+                                l.po.position,
+                                l.po.sequence,	
+                                l.item ,                     
+                                l.buy.from.bp,
+                                l.ship.from.bp,
+                                l.ddta,                      
+                                l.cdec,                      
+                                l.cadr,             
+                                l.sfad,                 
+                                
+                                l.sorn,                      
+                                l.spon,                      
+                                 
+                                l.customer.order,
+                                l.customer.item,
+                                l.order.quantity,
+                                                           
+                                l.ttyp,                      
+                                l.flut,                      
+                                l.quac,                      
+                                l.widt,                      
+                                l.linr,                      
+                                l.blhe,                      
+                                l.corr,                      
+                                l.scot,                      
+                                l.sccr,                      
+                                l.cert,                      
+                                l.cett,                      
+                                l.csty,                      
+                                l.scvl,                      
+                                l.dscr,                      
+                                l.prin,                      
+                                l.pnam,                      
+                                l.inkc,
+                                l.corrugated.type,                      
+                                                            
+                                l.lnth,                      
+                                l.palt,                      
+                                l.punt,                      
+                                                            
+                                l.nama,                      
+                                l.namc,                      
+                                l.cste,                      
+                                l.ccty,                      
+                                l.pstc,                                     
+                                l.cscd ,                     
+                                l.isCSCdelivery,
+                                l.separator)             
+
+return(0)
+
+	
+}
+|********************************Internal Functions*****************************
+function long create.csv.file( 
+		long		i,
+	domain	tcorno		i.po.number,	
+	domain	tcpono		i.po.position,
+	domain	tcpono		i.po.sequence,		 
+	domain	tcitem		i.item,
+	domain	tccom.bpid	i.buy.from.bp,
+	domain	tccom.bpid	i.ship.from.bp,	 
+	domain	tcdate		i.ddta,
+	domain	tccdec		i.cdec,
+	domain	tccom.cadr	i.cadr,
+	domain	tccom.cadr	i.sfad,
+		  		
+	domain	tcorno 		i.sorn,
+	domain	tcpono		i.spon,
+				
+	domain	tcmcs.st30m	i.customer.order,
+	domain	tcaitm		i.customer.item,
+	domain	tcqsl1		i.order.quantity,
+				
+	domain	txttyp		i.ttyp,
+	domain	tccdf_lstflt	i.flut,
+	domain	tfgld.year	i.quac,
+	domain	txlngt		i.widt,
+	domain	txlinr		i.linr,
+	domain	tdgen.long5	i.blhe,
+	domain	txcorr		i.corr,
+	domain	txscot		i.scot,
+	domain	tcmcs.str10	i.sccr,
+	domain	tcyesno		i.cert,
+	domain	txcett		i.cett,
+	domain	tcmcs.str10	i.csty,
+	domain	tcmcs.str256m	i.scvl,
+	domain	tcyesno		i.dscr,
+	domain	txprnt		i.prin,
+	domain	tcmcs.st15m	i.pnam,
+	domain	tcmcs.str10	i.inkc,
+	domain	tcmcs.str1	i.corrugated.type,
+				
+	domain	tiasc.cytm	i.lnth,
+	domain	tcyesno		i.palt,
+	domain	tdgen.long5	i.punt,
+				
+	domain	tcnama		i.nama,
+	domain	tcnamc		i.namc,
+	domain	tcmcs.cste	i.cste,
+	domain	tcccty		i.ccty,
+	domain	tcpstc		i.pstc,
+				
+	domain	tccdec		i.cscd,
+	domain	tcmcs.str1	i.isCSCdelivery,
+	domain	tcmcs.str1	i.separator)
+{
+		long		file.pointer
+		long		file.pointer.error.wise
+		string		l.file.name(100)
+		string		l.directory.path(100)
+		string		l.final.path(100)
+		string		file.string(1024)
+		string		line.string(1024)
+		string		l.separator
+		long		l.ret
+	domain	tcmcs.str100m	l.error.mess
+	
+	
+	|*Creating File
+	if i = 1 then
+		l.file.name = 	trim$(str$(i.sorn))&"_"&
+		      		trim$(str$(i.po.number))&"_"&
+		      		trim$(str$(get.compnr()))
+		      
+		 file.pointer = seq.open(l.final.path,"w+")
+		if file.pointer<1 then							
+	        	l.error.mess = trim$("txacp0201.001"&trim$(l.file.name))
+	        	return(DALHOOKERROR)
+	        endif
+	
+		|*Creating Header of CSV
+		file.string = 	"OOSReference" 		& l.separator &
+				"SalesOrder"		 & l.separator &
+				"SO Line" 		& l.separator &
+				"PurchaseOrder" 	& l.separator &
+				"PO Line" 		& l.separator &
+				"CustomerPO" 		& l.separator &
+				"CustomerItemID"	& l.separator &
+				"Item Code"		& l.separator &
+				"Buy-From Business Partner"   & l.separator &
+				"Ship-From Business Partner"  & l.separator &
+				"Planned Delivered Date"      & l.separator &
+				"Bale Quantity"               & l.separator &
+				"Corrugated Type"             & l.separator &
+				"Test Type"                   & l.separator &
+				"Fluting"                     & l.separator &
+				"Quality Code(s)"             & l.separator &
+				"Width"                       & l.separator &
+				"Liner"                       & l.separator &
+				"Length"                      & l.separator &
+				"Bale Height"                 & l.separator &
+				"Special Coating Liner"       & l.separator &
+				"Special Coating Type"        & l.separator &
+				"Special Coating Color"       & l.separator &
+				"Certification"               & l.separator &
+				"Certification types"         & l.separator &
+				"Certification sub- type"     & l.separator &
+				"Scoring Value"               & l.separator &
+				"Deep Score"                  & l.separator &
+				"Print"                       & l.separator &
+				"Print Name/ID"               & l.separator &
+				"Print Ink Color"             & l.separator &
+				"Pallet"                      & l.separator &
+				"Bales per Pallet"            & l.separator &
+				"DeliveryTerms2"              & l.separator &
+				"Receipt Address"             & l.separator &
+				"Name"                        & l.separator &
+				"Street"                      & l.separator &
+				"City Description"            & l.separator &
+				"State/Province"              & l.separator &
+				"Country"                     & l.separator &
+				"ZIP Code/Postal Code"        & l.separator &
+				"IsDeliveredByCSC"            & l.separator &
+ 				"IsUpgradeable" 	      & l.separator &
+				"SheetLength"                 & l.separator &
+				"SheetQuantity"               & l.separator &
+				"Tags per Unit"               & l.separator &
+				"NumberOfStraps"              & l.separator &
+				"OrderAck"                    & l.separator &
+				"ScheduleAck"                 & l.separator &
+				"LoadAck"                     & l.separator &
+				"DepartedAck"                 & l.separator &
+				"ManufacturingComment"        & l.separator &
+				"ShippingComment"             & l.separator &
+				"AccountingComment"          
+	
+		RETIFNOK(write.line.to.file(
+					l.file.name,
+					trim$(file.string),
+					EOL,
+					file.pointer))
+	endif
+		
+		|Creating Lines
+		create.POL( i.po.number,	
+			    i.po.position,  
+			    i.po.sequence,	
+			    i.item,         
+			    i.buy.from.bp,  
+			    i.ship.from.bp,	
+			    i.ddta,         
+		            i.cdec,         
+		            i.cadr,         
+			    i.sfad,          
+			                     
+			    i.sorn,          
+			    i.spon,
+			    i.customer.order,
+			    i.customer.item,
+			    i.order.quantity,          
+			                     
+			    i.ttyp,          
+			    i.flut,          
+			    i.quac,          
+			    i.widt,          
+			    i.linr,         
+			    i.blhe,         
+			    i.corr,         
+			    i.scot,         
+			    i.sccr,         
+			    i.cert,         
+			    i.cett,         
+			    i.csty,         
+			    i.scvl,         
+			    i.dscr,         
+			    i.prin,         
+			    i.pnam,         
+			    i.inkc,
+			    i.corrugated.type,         
+			                    
+			    i.lnth,         
+			    i.palt,         
+			    i.punt,         
+			                    
+			    i.nama,         
+			    i.namc,         
+			    i.cste,         
+			    i.ccty,         
+			    i.pstc,         
+			                    
+			    i.cscd,         
+			    i.isCSCdelivery,
+			    i.separator,
+			    line.string)    |*ref
+				
+		if write.line.to.file(
+					l.file.name,
+					trim$(line.string),
+					EOL,
+					file.pointer) <> 0 then
+				return(DALHOOKERROR)
+		endif
+		
+	l.ret = seq.close(file.pointer)
+	if l.ret= -1 then
+		l.error.mess = trim$("txacp0201.002"&trim$(l.file.name))						
+        	return(DALHOOKERROR)
+	endif
+	return(0)
+}
+
+
+function long write.line.to.file(
+	domain		tcmcs.str100	i.file.name,
+	const		string 		i.source.line(),
+	const		string		i.end.characters,
+			long		i.file.pointer)
+{
+		domain	tcpath2		filename
+ 
+			long		retval
+			long		length.in.chars
+		domain	tcmcs.s250m	l.error.mess
+ 
+	|**********************************************************************
+	|* Initialize local variables.
+	|**********************************************************************
+	length.in.chars	= 0
+ 
+	if i.file.pointer <= 0 then
+		|* No file open
+		return(0)
+	endif
+ 
+	|**********************************************************************
+	|* Add the CR and the LF characters.
+	|**********************************************************************
+	length.in.chars = len.in.bytes(i.source.line) +
+			  len(i.end.characters)
+ 
+	retval = seq.write(		i.source.line & i.end.characters,
+					length.in.chars,
+					i.file.pointer)
+	if retval < 0 then
+		l.error.mess = trim$("txacp0201.003"&trim$(i.file.name))
+|		determine.path.filename(i.file.pointer,
+|					filename)
+|		dal.set.error.message(	"tccom72009",
+|					filename)
+		|* Not possible to write file %1$s
+		return(DALHOOKERROR)
+	endif
+ 
+	return(0)
+}
+function get.item.details(
+		domain	tcitem		i.item,
+	ref	domain	txttyp		o.ttyp, 
+	ref	domain	tccdf_lstflt	o.flut, 
+	ref	domain	tfgld.year	o.quac, 
+	ref	domain	txlngt		o.widt, 
+	ref	domain	txlinr		o.linr, 
+	ref	domain	tdgen.long5	o.blhe, 
+	ref	domain	txcorr		o.corr, 
+	ref	domain	txscot		o.scot, 
+	ref	domain	tcmcs.str10	o.sccr, 
+	ref	domain	tcyesno		o.cert, 
+	ref	domain	txcett		o.cett, 
+	ref	domain	tcmcs.str10	o.csty, 
+        ref     domain	tcmcs.str256m	o.scvl, 
+	ref	domain	tcyesno		o.dscr, 	
+        ref     domain	txprnt		o.prin, 
+	ref	domain	tcmcs.st15m	o.pnam, 	
+	ref	domain	tcmcs.str10	o.inkc,
+	ref	domain	tcmcs.str1	o.corrugated.type) 	
+{	
+		
+	select	tcibd001.cdf_ttyp:o.ttyp,
+		tcibd001.cdf_flut:o.flut,
+		tcibd001.cdf_quac:o.quac,
+		tcibd001.cdf_widt:o.widt,
+		tcibd001.cdf_linr:o.linr,
+		tcibd001.cdf_blhe:o.blhe,
+		tcibd001.cdf_corr:o.corr,
+		tcibd001.cdf_scot:o.scot,
+		tcibd001.cdf_sccr:o.sccr,
+		tcibd001.cdf_cert:o.cert,
+		tcibd001.cdf_cett:o.cett,
+		tcibd001.cdf_csty:o.csty,
+		tcibd001.cdf_scvl:o.scvl,
+		tcibd001.cdf_dscr:o.dscr,
+		tcibd001.cdf_prin:o.prin,
+		tcibd001.cdf_pnam:o.pnam,
+		tcibd001.cdf_inkc:o.inkc
+	from	tcibd001
+	where	tcibd001.item = {:i.item}
+	selectdo
+		if o.corr = txcorr.fanfold then
+			o.corrugated.type = "Y"
+		else
+			o.corrugated.type = "N"
+		endif
+	endselect
+}
+function get.item.purchase.bp(
+		domain	tcitem		i.item,	
+	ref	domain	tiasc.cytm	o.lnth,
+	ref	domain	tcyesno		o.palt,
+	ref	domain	tdgen.long5	o.punt )
+{
+			select	tdipu010.cdf_lnth:o.lnth,
+				tdipu010.cdf_palt:o.palt,
+				tdipu010.cdf_punt:o.punt
+			from	tdipu010
+			where	tdipu010.item = {:i.item}
+			as set with 1 rows
+			selectdo
+			endselect
+}
+
+function get.addresses(
+		domain	tccom.cadr	i.sfad,
+	ref	domain	tcnama		o.nama,                         
+	ref     domain	tcnamc		o.namc,             
+	ref	domain	tcmcs.cste	o.cste,                         
+	ref	domain	tcccty		o.ccty,                        
+	ref	domain	tcpstc		o.pstc,
+	ref	domain	tcdsca		o.city.desc)
+{
+			select	tccom130.nama:o.nama,
+				tccom130.namc:o.namc,
+				tccom130.cste:o.cste,	|*state/province
+				tccom130.ccty:o.ccty,	|*Country
+				tccom130.ccit:o.ccit,	|*city
+				tccom130.pstc:o.pstc	
+			from	tccom130
+			where	tccom130._index1 = {:i.sfad}
+			as set with 1 rows
+			selectdo
+				select	tccom139.dsca:o.city.desc
+				from	tccom139
+				where	tccom139._index1 = {:o.ccty,:o.cste,
+								:o.ccit}
+				as set with 1 rows
+				selectdo
+				endselect
+			endselect
+}
+function get.customer.item(
+		domain	tcorno		i.sorn,
+		domain	tcpono		i.spon,
+		domain	tcpono		i.so.seq,
+	ref	domain	tcaitm		o.customer.item,
+	ref	domain	tcqsl1		o.order.quantity)
+{	
+	domain	tccitt		l.item.code.system
+	domain	tccom.bpid	l.ship.to.bp
+	domain	tcitem		l.so.item
+		
+		select	tdsls401.citm:o.customer.item,
+			tdsls401.qoor:o.order.quantity,
+			tdsls401.citt:l.item.code.system,
+			tdsls401.stbp:l.ship.to.bp,
+			tdsls401.item:l.so.item			
+		from	tdsls401
+		where	tdsls401._index1 ={:i.sorn,:i.spon,:i.so.seq}
+		as set with 1 rows
+		selectdo
+		if o.customer.item = "" then
+			select	tcibd004.aitc:o.customer.item
+			from	tcibd004
+			where	tcibd004._index1 = {:l.item.code.system,
+						    :l.ship.to.bp,
+						    :l.so.item}
+			as set with 1 rows
+			selectdo
+			endselect 
+		endif
+		endselect
+}
+function create.POL( 		
+		domain	tcorno		 i.po.number,	
+		domain	tcpono		 i.po.position,  
+		domain	tcpono		 i.po.sequence,	
+		domain	tcitem		 i.item,         
+		domain	tccom.bpid	i.buy.from.bp,  
+		domain	tccom.bpid	i.ship.from.bp,	
+		domain	tcdate		i.ddta,         
+		domain	tccdec		 i.cdec,         
+		domain	tccom.cadr	  i.cadr,         
+		domain	tccom.cadr	  i.sfad,          
+			  				                     
+		domain	tcorno 		  i.sorn,          
+		domain	tcpono		  i.spon, 
+		domain	tcmcs.st30m	  i.customer.order,
+		domain	tcaitm		  i.customer.item,
+		domain	tcqsl1		  i.order.quantity,      
+							                   
+		domain	txttyp		  i.ttyp,          
+		domain	tccdf_lstflt	  i.flut,          
+		domain	tfgld.year	  i.quac,          
+		domain	txlngt		  i.widt,          
+		domain	txlinr		  i.linr,         
+		domain	tdgen.long5	  i.blhe,         
+		domain	txcorr  	  i.corr,         
+		domain	txscot		  i.scot,         
+		domain	tcmcs.str1	  i.sccr,         
+		domain	tcyesno		  i.cert,         
+		domain	txcett		  i.cett,         
+		domain	tcmcs.str1	  i.csty,         
+		domain	tcmcs.str2        i.scvl,         
+		domain	tcyesno		  i.dscr,         
+		domain	txprnt		  i.prin,         
+		domain	tcmcs.st15	  i.pnam,         
+		domain	tcmcs.str1	 i.inkc,         
+		domain	tcmcs.str1	 i.corrugated.type,   
+							                    
+		domain	tiasc.cytm	  i.lnth,         
+		domain	tcyesno		   i.palt,         
+		domain	tdgen.long5	   i.punt,         
+							                    
+		domain	tcnama		    i.nama,         
+		domain	tcnamc		    i.namc,         
+		domain	tcmcs.cste	   i.cste,         
+		domain	tcccty		    i.ccty,         
+		domain	tcpstc		    i.pstc,         
+								                    
+		domain	tccdec		    i.cscd,         
+		domain	tcmcs.str1	   i.isCSCdelivery,
+		domain	tcmcs.str1	   i.separator,
+	ref		string		 o.line.string)
+{
+	string		l.line.string(1024)
+	o.line.string = ""
+	l.line.string = trim$(str$(i.po.position))&"^"&trim$(i.item)& i.separator &	|*OOSReference
+			trim$(	i.sorn) 		& i.separator &		|*SalesOrder
+			trim$(str$(i.spon)) 		& i.separator&		|*SO Line 
+			str$(i.po.number)		& i.separator &		|*PurchaseOrder
+			str$(i.po.position) 		& i.separator &		|*PO Line
+			trim$(i.customer.order) 	& i.separator &		|*CustomerPO
+			trim$(i.customer.item)       & i.separator &		|*CustomerItemID
+			trim$(	i.item)        	       & i.separator &		|*Item Code
+			trim$(	i.buy.from.bp)         & i.separator &		|*Buy-From Business Partner
+			trim$(	i.ship.from.bp)        & i.separator &		|*Ship-From Business Partner
+			             
+			trim$(str$(i.ddta))		   & i.separator &	|*Planned Delivered Date
+|					           & i.separator &		|*Bale Quantity   
+			trim$(i.corrugated.type)	& i.separator &		|*Corrugated Type
+			trim$(enum.descr$("txttyp",i.ttyp))     & i.separator & |*Test Type 
+			trim$(str$(i.flut))         & i.separator &		|*Fluting 
+		        trim$(str$(i.quac))          & i.separator &		|*Quality Code(s) 
+		        trim$(str$( i.widt))          & i.separator &		|*Width 
+		        trim$(str$( i.linr))          & i.separator &		|*Liner 
+		        trim$(str$( i.lnth))		& i.separator &		|*Length 
+		        trim$(str$( i.blhe))          & i.separator &		|*Bale Height 
+		        trim$(str$( i.corr))          & i.separator &		|*Special Coating Liner
+		        trim$(str$( i.scot))          & i.separator &		|*Special Coating Type
+		        trim$( i.sccr)         	 & i.separator &		|*Special Coating Color 
+		        trim$(enum.descr$("tcyesno",i.cert))    & i.separator &	|*Certification 
+		        trim$( str$(i.cett))          & i.separator &		|*Certification types 
+		        trim$( i.csty)          & i.separator &			|*Certification sub- type 
+		        trim$( i.scvl)          & i.separator &			|*Scoring Value
+		        trim$(enum.descr$("tcyesno",i.dscr))    & i.separator &	|*Deep Score 
+		        trim$(enum.descr$("txprnt",i.prin))    & i.separator &	|*Print 
+		        trim$( i.pnam)          & i.separator &			|*Print Name/ID 
+		        trim$( i.inkc)          & i.separator &			|*Print Ink Color  
+		                     
+		        
+		        trim$(str$(i.palt))          & i.separator &		|*Pallet 
+		        trim$(str$(i.punt))          & i.separator &		|*Bales per Pallet 
+		        trim$(i.cdec)       		 & i.separator &	|*DeliveryTerms2
+		        trim$(i.cadr)       		 & i.separator &	|*Receipt Address
+		        trim$( i.nama)         & i.separator &			|*Name
+		        trim$( i.namc)         & i.separator &			|*Street
+		        							|*City Description
+		        trim$( i.cste)         & i.separator &			|*State/Province
+		        trim$( i.ccty)         & i.separator &			|*Country
+		        trim$( i.pstc)         & i.separator &			|*ZIP Code/Postal Code
+		        trim$( i.isCSCdelivery)   & i.separator &        	|*IsDeliveredByCSC
+		        "N"			  & i.separator &		|*IsUpgradeable
+		        trim$(str$( i.lnth))	  & i.separator &		|*SheetLength
+		        trim$(str$(i.order.quantity))    & i.separator &	|*SheetQuantity
+		        "2"			  & i.separator &		|*Tags per Unit
+		        "4"			  & i.separator &		|*NumberOfStraps
+		        "N"			& i.separator &			|*OrderAck
+			"N"		        & i.separator &			|*ScheduleAck
+			"N"		        	& i.separator &		|*LoadAck
+			"N"		        	& i.separator &		|*DepartedAck
+			""		        	& i.separator &		|*ManufacturingComment
+			""		        	& i.separator &		|*ShippingComment
+			""		        				|*AccountingComment
+	
+	o.line.string = l.line.string
+}				
+	
+function void initialize.variables(...)
+{
+ 
+			long		arg.count
+ 
+	for arg.count = 1 to get.argc()
+		on case get.arg.type(	arg.count)
+		case DB.LONG:
+			put.long.arg(	arg.count, 0)
+			break
+		case DB.DOUBLE:
+			put.double.arg(	arg.count, 0.0)
+			break
+		case DB.STRING:
+			put.string.arg(	arg.count, "")
+			break
+		case DB.MULTIBYTE:
+			put.string.arg(	arg.count, "")
+			break
+		case -1:
+			break
+		endcase
+	endfor
+}
